@@ -28,6 +28,8 @@
     "reports",
     "playwright-report",
     "test-results",
-    "*.pdf"
+    "*.pdf",
+    "backlog",
+    "groma"
   ]
 }

@@ -22,3 +22,11 @@ Un clone très léger de Wikipédia : une page par utilisatrice, enregistrée da
 - Code, commentaires et messages de commit en anglais, avec les noms donnés par la ligne _Code_ de `GLOSSARY.md`.
 - Documents du projet (glossaire, ADR) et échanges en français ; dire « l'utilisatrice ».
 - Textes français de l'interface : écriture inclusive avec le point médian (« utilisateur·ice »). En cas de doute sur une forme, demander.
+
+<!-- prettier-ignore-start -->
+<!-- groma:start -->
+## Groma
+
+This project uses Groma. Before you scan, inspect, or curate architecture, or change files for a Backlog task, run `groma agent-instructions` and read the guide it names for that job. When it reports a first scan, ask the user whether they want you to curate the architecture. Do not edit Groma-owned architecture files directly.
+<!-- groma:end -->
+<!-- prettier-ignore-end -->

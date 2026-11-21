@@ -7,3 +7,7 @@ test-results/
 .claude/
 package-lock.json
 skills-lock.json
+# Generated and rewritten by Backlog.md and Groma
+AGENTS.md
+backlog/
+groma/
