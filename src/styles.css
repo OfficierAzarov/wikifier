@@ -1,0 +1,16 @@
+/* Visual tokens, close to the Vector look without its brand. */
+:root {
+  --color-text: #202122;
+  --color-background: #ffffff;
+  --color-link: #3366cc;
+  --color-border: #a2a9b1;
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-serif: "Linux Libertine", Georgia, Times, serif;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  background: var(--color-background);
+}

@@ -1,0 +1,53 @@
+{
+  "name": "wiki3",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "prepare": "lefthook install",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint --max-warnings 0 .",
+    "typecheck": "tsc",
+    "arch": "depcruise src --config .dependency-cruiser.cjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "npm run build && playwright test",
+    "test:mutation": "stryker run",
+    "knip": "knip",
+    "size": "size-limit",
+    "check:fast": "npm run format:check && npm run lint && npm run typecheck && npm run arch && npm run test:coverage",
+    "check": "npm run check:fast && npm run knip && npm run build && npm run size && playwright test && npm run test:mutation"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.65.1",
+    "@size-limit/file": "^14.3.0",
+    "@stryker-mutator/core": "^10.1.1",
+    "@stryker-mutator/typescript-checker": "^10.1.1",
+    "@stryker-mutator/vitest-runner": "^10.1.1",
+    "@types/node": "^26.6.6",
+    "@vitest/coverage-v8": "^5.1.1",
+    "@vitest/eslint-plugin": "^1.6.28",
+    "dependency-cruiser": "^18.8.0",
+    "eslint": "^10.15.0",
+    "fast-check": "^4.10.3",
+    "globals": "^17.14.0",
+    "knip": "^6.47.0",
+    "lefthook": "^2.2.2",
+    "prettier": "^3.10.1",
+    "size-limit": "^14.3.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.73.0",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.1"
+  }
+}

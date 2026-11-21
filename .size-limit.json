@@ -1,0 +1,7 @@
+[
+  {
+    "name": "Application (JS + CSS, compressed)",
+    "path": ["dist/assets/*.js", "dist/assets/*.css"],
+    "limit": "60 kB"
+  }
+]
