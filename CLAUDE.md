@@ -16,6 +16,7 @@ Un clone très léger de Wikipédia : une page par utilisatrice, enregistrée da
 - **Les seuils ne baissent pas** : couverture, Stryker, taille du build, limites de complexité ESLint. Si l'un bloque, on simplifie le code ou on renforce les tests, et on ne désactive pas la règle sans le demander.
 - **Nouvelle dépendance d'exécution** : seulement avec un ADR.
 - **Décisions difficiles à défaire** : proposer un ADR dans `docs/adr/` (format court, en français).
+- **Messages de commit** : [Conventional Commits](https://www.conventionalcommits.org/fr/v1.0.0/), au format `type(scope): description`, scope facultatif. Types : `feat`, `fix`, `docs`, `refactor`, `test`, `perf`, `build`, `ci`, `chore`, `style`. Description à l'impératif, en minuscules, sans point final. Un changement incompatible s'écrit `type!:` ou porte un pied `BREAKING CHANGE:`.
 
 ## Langue
 
