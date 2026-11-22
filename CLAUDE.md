@@ -24,6 +24,14 @@ Un clone très léger de Wikipédia : une page par utilisatrice, enregistrée da
 - Documents du projet (glossaire, ADR) et échanges en français ; dire « l'utilisatrice ».
 - Textes français de l'interface : écriture inclusive avec le point médian (« utilisateur·ice »). En cas de doute sur une forme, demander.
 
+## Tickets et carte Groma
+
+Groma ne relie une tâche du backlog à la carte que par ses références (`--add-ref`) ou ses fichiers modifiés (`--modified-file`) : sans eux, elle apparaît comme non reliée.
+
+- **Après avoir créé des tickets**, les relier : une référence par élément visé, avec `backlog task edit <id> --add-ref <id-élément>`, jamais en éditant le Markdown de la tâche.
+- **Si l'élément visé n'existe pas encore**, le déclarer en brouillon : `groma draft component <nom-anglais> --parent <conteneur> …`, puis `groma edit <id> --title "<titre français>"`. L'ID vient du nom, donc le nom est anglais et le titre français.
+- **Quand le code arrive**, `groma scan` rattache les fichiers au brouillon, puis `groma accept <id>`, et on enregistre les fichiers modifiés sur la tâche (guide `groma agent-instructions backlog`).
+
 <!-- prettier-ignore-start -->
 <!-- groma:start -->
 ## Groma
