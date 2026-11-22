@@ -1,0 +1,854 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Le harnais de Wiki3</title>
+    <style>
+      /* Palette Monokai Soda : fond #1a1a1a, texte #f6f6ef, accents cyan / vert / orange / violet. */
+      :root {
+        color-scheme: dark;
+        --bg: #1a1a1a;
+        --ink: #f6f6ef;
+        --muted: #a3a398;
+        --line: #8f908a;
+        --card: #232323;
+        --card-bd: #3e3d32;
+        --guide-bg: #1f3438;
+        --guide-bd: #66d9ef;
+        --step-bg: #2a2a28;
+        --step-bd: #8f908a;
+        --local-bg: #3c2d1b;
+        --local-bd: #fd971f;
+        --fast-bg: #2b3a26;
+        --fast-bd: #a6e22e;
+        --ci-bg: #30293c;
+        --ci-bd: #ae81ff;
+        --accent: #f92672;
+        --zone-fast: rgba(166, 226, 46, 0.06);
+        --zone-ci: rgba(174, 129, 255, 0.07);
+        --zone-guide: rgba(102, 217, 239, 0.06);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font:
+          16px/1.5 system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+      }
+      main {
+        max-width: 1064px;
+        margin: 0 auto;
+        padding: 32px 16px 0;
+      }
+      h1 {
+        margin: 0 0 4px;
+        font-size: 1.8rem;
+        line-height: 1.2;
+      }
+      .lead {
+        margin: 0 0 20px;
+        color: var(--muted);
+        max-width: 70ch;
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 18px;
+        margin: 0 0 16px;
+        padding: 0;
+        list-style: none;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+      .legend li {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .swatch {
+        width: 14px;
+        height: 14px;
+        border-radius: 4px;
+        border: 2px solid;
+      }
+
+      .diagram {
+        overflow-x: auto;
+        padding-bottom: 8px;
+      }
+      svg {
+        display: block;
+        width: 100%;
+        min-width: 860px;
+        height: auto;
+      }
+      svg text {
+        fill: var(--ink);
+        font-family: inherit;
+        pointer-events: none;
+      }
+      .t-main {
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .t-sub {
+        font-size: 11px;
+        fill: var(--muted);
+      }
+      .t-zone {
+        font-size: 13px;
+        font-weight: 700;
+      }
+      .t-cap {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        fill: var(--muted);
+      }
+      .zone {
+        stroke-width: 1.5;
+        stroke-dasharray: 5 4;
+      }
+      .zone-guide {
+        fill: var(--zone-guide);
+        stroke: var(--guide-bd);
+      }
+      .zone-fast {
+        fill: var(--zone-fast);
+        stroke: var(--fast-bd);
+      }
+      .zone-ci {
+        fill: var(--zone-ci);
+        stroke: var(--ci-bd);
+      }
+      .link {
+        stroke: var(--line);
+        stroke-width: 1.5;
+        fill: none;
+      }
+      .link-dash {
+        stroke-dasharray: 4 4;
+      }
+      #arrow path {
+        fill: var(--line);
+      }
+
+      .node {
+        cursor: pointer;
+        outline: none;
+      }
+      .node rect {
+        stroke-width: 1.5;
+        transition: stroke-width 0.1s;
+      }
+      .node:hover rect {
+        stroke-width: 2.5;
+      }
+      .node:focus-visible rect {
+        stroke: var(--accent);
+        stroke-width: 3;
+        stroke-dasharray: 5 3;
+      }
+      .node[aria-pressed="true"] rect {
+        stroke: var(--accent);
+        stroke-width: 3.5;
+      }
+      .k-guide rect {
+        fill: var(--guide-bg);
+        stroke: var(--guide-bd);
+      }
+      .k-step rect {
+        fill: var(--step-bg);
+        stroke: var(--step-bd);
+      }
+      .k-local rect {
+        fill: var(--local-bg);
+        stroke: var(--local-bd);
+      }
+      .k-fast rect {
+        fill: var(--fast-bg);
+        stroke: var(--fast-bd);
+      }
+      .k-ci rect {
+        fill: var(--ci-bg);
+        stroke: var(--ci-bd);
+      }
+      .node.zone-head rect {
+        fill: transparent;
+        stroke: none;
+      }
+      .node.zone-head:hover rect,
+      .node.zone-head[aria-pressed="true"] rect {
+        fill: var(--card);
+        stroke: var(--line);
+        stroke-width: 1.5;
+      }
+
+      .card {
+        position: sticky;
+        bottom: 16px;
+        margin: 16px 0 32px;
+        padding: 14px 18px 16px;
+        background: var(--card);
+        border: 1px solid var(--card-bd);
+        border-left: 6px solid var(--step-bd);
+        border-radius: 10px;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+      }
+      .card[data-kind="guide"] {
+        border-left-color: var(--guide-bd);
+      }
+      .card[data-kind="local"] {
+        border-left-color: var(--local-bd);
+      }
+      .card[data-kind="fast"] {
+        border-left-color: var(--fast-bd);
+      }
+      .card[data-kind="ci"] {
+        border-left-color: var(--ci-bd);
+      }
+      .card-kind {
+        margin: 0;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .card h2 {
+        margin: 2px 0 6px;
+        font-size: 1.15rem;
+      }
+      .card p {
+        margin: 0;
+      }
+      .card .where {
+        margin-top: 8px;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+      code {
+        font:
+          0.9em ui-monospace,
+          "SF Mono",
+          Menlo,
+          monospace;
+        background: var(--step-bg);
+        padding: 1px 5px;
+        border-radius: 4px;
+      }
+      .hint {
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Le harnais de Wiki3</h1>
+      <p class="lead">
+        Tout ce qui guide le code avant qu'il soit écrit, puis le contrôle à chaque étape jusqu'à la
+        CI. Plus on avance vers la droite et vers le bas, plus le contrôle est complet (et lent).
+        Clique sur un élément pour savoir ce qu'il fait.
+      </p>
+
+      <ul class="legend" aria-label="Légende">
+        <li>
+          <span
+            class="swatch"
+            style="background: var(--guide-bg); border-color: var(--guide-bd)"
+          ></span>
+          Guide ou règle
+        </li>
+        <li>
+          <span
+            class="swatch"
+            style="background: var(--step-bg); border-color: var(--step-bd)"
+          ></span>
+          Moment du cycle
+        </li>
+        <li>
+          <span
+            class="swatch"
+            style="background: var(--local-bg); border-color: var(--local-bd)"
+          ></span>
+          Garde-fou local
+        </li>
+        <li>
+          <span
+            class="swatch"
+            style="background: var(--fast-bg); border-color: var(--fast-bd)"
+          ></span>
+          Contrôle de <code>check:fast</code>
+        </li>
+        <li>
+          <span class="swatch" style="background: var(--ci-bg); border-color: var(--ci-bd)"></span>
+          Contrôle réservé à la CI
+        </li>
+      </ul>
+
+      <div class="diagram">
+        <svg
+          viewBox="0 0 1000 660"
+          role="group"
+          aria-label="Schéma du harnais : guides, moments du cycle et contrôles"
+        >
+          <defs>
+            <marker
+              id="arrow"
+              viewBox="0 0 10 10"
+              refX="9"
+              refY="5"
+              markerWidth="7"
+              markerHeight="7"
+              orient="auto-start-reverse"
+            >
+              <path d="M0 0 L10 5 L0 10 z" />
+            </marker>
+          </defs>
+
+          <!-- Zones -->
+          <rect class="zone zone-guide" x="0" y="0" width="1000" height="96" rx="12" />
+          <rect class="zone zone-ci" x="0" y="366" width="1000" height="288" rx="12" />
+          <rect class="zone zone-fast" x="12" y="410" width="976" height="122" rx="10" />
+          <text class="t-cap" x="16" y="18">AVANT D'ÉCRIRE · CE QUE L'AGENT LIT</text>
+          <text class="t-cap" x="24" y="556">EN PLUS, UNIQUEMENT EN CI</text>
+
+          <!-- Liens -->
+          <path class="link" d="M88 96 V128" marker-end="url(#arrow)" />
+          <path class="link" d="M176 158 H204" marker-end="url(#arrow)" />
+          <path class="link" d="M382 158 H410" marker-end="url(#arrow)" />
+          <path class="link" d="M588 158 H616" marker-end="url(#arrow)" />
+          <path class="link" d="M794 158 H822" marker-end="url(#arrow)" />
+          <path class="link" d="M88 186 V212 M88 260 V276" />
+          <path class="link" d="M294 186 V212 M294 260 V276" />
+          <path class="link" d="M500 186 V212 M500 260 V276" />
+          <path class="link" d="M706 186 V212" />
+          <path class="link" d="M912 186 V212 M912 260 V276" />
+          <path class="link link-dash" d="M294 324 V408" marker-end="url(#arrow)" />
+          <path class="link link-dash" d="M706 260 V408" marker-end="url(#arrow)" />
+          <path class="link link-dash" d="M912 324 V364" marker-end="url(#arrow)" />
+
+          <g id="nodes"></g>
+        </svg>
+      </div>
+
+      <section
+        class="card"
+        id="card"
+        data-kind="step"
+        aria-live="polite"
+        aria-label="Explication de l'élément sélectionné"
+      >
+        <p class="card-kind" id="card-kind">Mode d'emploi</p>
+        <h2 id="card-title">Choisis un élément du schéma</h2>
+        <p id="card-text" class="hint">
+          Chaque bloc coloré est cliquable (ou activable au clavier avec Tab puis Entrée).
+        </p>
+        <p class="where" id="card-where" hidden></p>
+      </section>
+      <noscript><p>Ce schéma a besoin de JavaScript pour s'afficher.</p></noscript>
+    </main>
+
+    <script>
+      const KIND_LABEL = {
+        guide: "Guide ou règle",
+        step: "Moment du cycle",
+        local: "Garde-fou local",
+        fast: "Contrôle de check:fast",
+        ci: "Contrôle réservé à la CI",
+      };
+
+      // Colonnes du cycle : x = 0, 206, 412, 618, 824 (largeur 176).
+      const COLUMN_X = [0, 206, 412, 618, 824];
+      const W = 176;
+      const col = (i) => COLUMN_X[i];
+      const guideX = (i) => i * 168.8;
+      const fastX = (i) => 24 + i * 194;
+
+      const NODES = [
+        // --- Guides ---------------------------------------------------------
+        {
+          id: "claude-md",
+          kind: "guide",
+          x: guideX(0),
+          y: 30,
+          w: 156,
+          h: 52,
+          label: ["CLAUDE.md", "règles de travail"],
+          text: "Les règles que Claude lit au début de chaque session : TDD sans exception, architecture hexagonale, seuils qui ne baissent pas, commits conventionnels, langues du code et de l'interface.",
+          where: "CLAUDE.md",
+        },
+        {
+          id: "glossary",
+          kind: "guide",
+          x: guideX(1),
+          y: 30,
+          w: 156,
+          h: 52,
+          label: ["GLOSSARY.md", "vocabulaire"],
+          text: "Le vocabulaire du projet. Chaque concept a un nom français et un nom de code en anglais, et le code doit reprendre le second pour que tout le monde parle de la même chose.",
+          where: "GLOSSARY.md",
+        },
+        {
+          id: "adr",
+          kind: "guide",
+          x: guideX(2),
+          y: 30,
+          w: 156,
+          h: 52,
+          label: ["ADR", "décisions d'architecture"],
+          text: "Dix décisions courtes et datées : page statique, architecture hexagonale, DOM natif, sécurité du contenu, i18n, format de sauvegarde, code en anglais, pas de Docker, navigateurs cibles, TDD et mutation. Une décision difficile à défaire ajoute un ADR.",
+          where: "docs/adr/",
+        },
+        {
+          id: "skills",
+          kind: "guide",
+          x: guideX(3),
+          y: 30,
+          w: 156,
+          h: 52,
+          label: ["Skills", "procédures à la demande"],
+          text: "Des procédures que Claude charge quand la tâche s'y prête : interroger un plan (grilling), tenir le glossaire et les ADR (domain-modeling), écrire une spec ou des tickets, faire une rétro, rédiger pour les agents.",
+          where: ".agents/skills/ (liés depuis .claude/skills/)",
+        },
+        {
+          id: "backlog",
+          kind: "guide",
+          x: guideX(4),
+          y: 30,
+          w: 156,
+          h: 52,
+          label: ["Backlog.md", "tickets du MVP"],
+          text: "Les tickets de l'epic MVP. Ils se manipulent uniquement avec la CLI backlog, jamais en éditant les fichiers, et AGENTS.md demande de lire `backlog instructions overview` au début de chaque conversation.",
+          where: "backlog/, AGENTS.md",
+        },
+        {
+          id: "groma",
+          kind: "guide",
+          x: guideX(5),
+          y: 30,
+          w: 156,
+          h: 52,
+          label: ["Groma", "carte d'architecture"],
+          text: "La carte du système (acteurs, conteneur, composants, flux), reliée aux tickets par références et fichiers modifiés. Elle est maintenue par l'outil `groma` : on n'édite pas ses fichiers à la main.",
+          where: "groma/",
+        },
+
+        // --- Moments --------------------------------------------------------
+        {
+          id: "writing",
+          kind: "step",
+          x: col(0),
+          y: 130,
+          w: W,
+          h: 56,
+          label: ["1 · Écriture", "guidée par les documents"],
+          text: "Claude (ou la développeuse) écrit le code en s'appuyant sur les guides ci-dessus. Aucune règle n'est laissée à la seule bonne volonté : chacune est contrôlée plus loin dans le cycle.",
+        },
+        {
+          id: "turn-end",
+          kind: "step",
+          x: col(1),
+          y: 130,
+          w: W,
+          h: 56,
+          label: ["2 · Fin de tour", "Claude veut s'arrêter"],
+          text: "Retour le plus rapide : au moment où Claude pense avoir fini, un hook le force à prouver que le code est propre avant de rendre la main.",
+        },
+        {
+          id: "commit",
+          kind: "step",
+          x: col(2),
+          y: 130,
+          w: W,
+          h: 56,
+          label: ["3 · git commit", "lefthook pre-commit"],
+          text: "Un contrôle léger et parallèle, limité aux fichiers indexés, pour qu'aucun commit ne contienne un fichier mal formaté ou une erreur de lint.",
+          where: "lefthook.yml",
+        },
+        {
+          id: "push",
+          kind: "step",
+          x: col(3),
+          y: 130,
+          w: W,
+          h: 56,
+          label: ["4 · git push", "lefthook pre-push"],
+          text: "Dernier filet avant que le code quitte la machine : toute la suite rapide est relancée, sur l'ensemble du projet.",
+          where: "lefthook.yml",
+        },
+        {
+          id: "ci",
+          kind: "step",
+          x: col(4),
+          y: 130,
+          w: W,
+          h: 56,
+          label: ["5 · Intégration", "CI GitHub Actions"],
+          text: "À chaque push sur main et chaque pull request, la CI installe Node (version de .nvmrc), les dépendances et trois navigateurs, puis lance `npm run check` : la suite complète.",
+          where: ".github/workflows/ci.yml",
+        },
+
+        // --- Colonne 1 : écriture -------------------------------------------
+        {
+          id: "tdd",
+          kind: "guide",
+          x: col(0),
+          y: 212,
+          w: W,
+          h: 48,
+          label: ["Test d'abord", "rouge → vert → nettoyage"],
+          text: "Sans exception : on écrit le test, on le lance et on montre qu'il échoue pour la bonne raison, on écrit le minimum de code, puis on nettoie. Aucun outil ne prouve l'ordre ; c'est pourquoi la couverture et la mutation contrôlent la solidité des tests.",
+          where: "docs/adr/0010-tdd-et-tests-de-mutation.md",
+        },
+        {
+          id: "e2e-first",
+          kind: "guide",
+          x: col(0),
+          y: 276,
+          w: W,
+          h: 48,
+          label: ["Scénario e2e d'abord", "puis tests unitaires"],
+          text: "Une fonctionnalité commence par un scénario Playwright dans `e2e/`, qui décrit ce que voit l'utilisatrice. On descend ensuite vers les tests unitaires du domaine et des cas d'usage.",
+          where: "e2e/",
+        },
+
+        // --- Colonne 2 : fin de tour ----------------------------------------
+        {
+          id: "stop-hook",
+          kind: "local",
+          x: col(1),
+          y: 212,
+          w: W,
+          h: 48,
+          label: ["Hook Stop", "check-fast.sh"],
+          text: "Quand Claude veut terminer son tour, ce hook lance `npm run check:fast` (180 s maximum). Si ça échoue, Claude ne peut pas s'arrêter : il reçoit les 40 dernières lignes d'erreur et doit corriger.",
+          where: ".claude/settings.json, .claude/hooks/check-fast.sh",
+        },
+        {
+          id: "loop-guard",
+          kind: "local",
+          x: col(1),
+          y: 276,
+          w: W,
+          h: 48,
+          label: ["Garde-fou anti-boucle", "au 2ᵉ échec, on passe"],
+          text: "Si le hook a déjà bloqué une fois et que ça échoue encore, il laisse Claude s'arrêter mais affiche un avertissement : le code n'est pas propre. Cela évite une boucle sans fin.",
+          where: ".claude/hooks/check-fast.sh",
+        },
+
+        // --- Colonne 3 : commit ---------------------------------------------
+        {
+          id: "prettier-hook",
+          kind: "local",
+          x: col(2),
+          y: 212,
+          w: W,
+          h: 48,
+          label: ["Prettier", "fichiers indexés"],
+          text: "Vérifie le formatage des fichiers indexés (ts, js, json, md, css, html, yml). Le commit est refusé si l'un d'eux n'est pas formaté.",
+          where: "lefthook.yml, .prettierrc.json",
+        },
+        {
+          id: "eslint-hook",
+          kind: "local",
+          x: col(2),
+          y: 276,
+          w: W,
+          h: 48,
+          label: ["ESLint", "0 avertissement toléré"],
+          text: "Lint des fichiers TypeScript indexés, en parallèle de Prettier. Un simple avertissement suffit à refuser le commit.",
+          where: "lefthook.yml, eslint.config.ts",
+        },
+
+        // --- Colonne 4 : push -----------------------------------------------
+        {
+          id: "prepush",
+          kind: "local",
+          x: col(3),
+          y: 212,
+          w: W,
+          h: 48,
+          label: ["pre-push", "lance check:fast"],
+          text: "Relance `npm run check:fast` (la même suite que le hook Stop) avant tout envoi. Ça rattrape les commits faits à la main, hors session Claude.",
+          where: "lefthook.yml",
+        },
+
+        // --- Colonne 5 : CI -------------------------------------------------
+        {
+          id: "stryker-cache",
+          kind: "ci",
+          x: col(4),
+          y: 212,
+          w: W,
+          h: 48,
+          label: ["Cache Stryker", "mutation incrémentale"],
+          text: "Le fichier d'état des tests de mutation est mis en cache entre deux runs : Stryker ne retest que le code modifié depuis la dernière fois, ce qui garde la CI rapide.",
+          where: "reports/stryker-incremental.json",
+        },
+        {
+          id: "ci-reports",
+          kind: "ci",
+          x: col(4),
+          y: 276,
+          w: W,
+          h: 48,
+          label: ["Rapports d'échec", "Playwright + Stryker"],
+          text: "Si la CI échoue, les rapports Playwright (avec les traces) et Stryker sont publiés comme artefact téléchargeable pour comprendre ce qui a cassé.",
+          where: "playwright-report/, reports/",
+        },
+
+        // --- Zones check ----------------------------------------------------
+        {
+          id: "check",
+          kind: "ci",
+          zone: true,
+          x: 0,
+          y: 366,
+          w: 1000,
+          h: 36,
+          label: ["npm run check", "CI · étape 5"],
+          text: "La suite complète : tout `check:fast`, puis Knip, le build, la taille, les tests de bout en bout sur 5 navigateurs et les tests de mutation. C'est ce que lance la CI.",
+          where: "package.json",
+        },
+        {
+          id: "check-fast",
+          kind: "fast",
+          zone: true,
+          x: 12,
+          y: 410,
+          w: 976,
+          h: 34,
+          label: ["npm run check:fast", "étapes 2 et 4"],
+          text: "La suite rapide, lancée par le hook Stop de Claude et par le pre-push : format, lint, types, architecture, tests unitaires et couverture. À lancer avant de rendre la main.",
+          where: "package.json",
+        },
+
+        // --- check:fast -----------------------------------------------------
+        {
+          id: "format",
+          kind: "fast",
+          x: fastX(0),
+          y: 452,
+          w: W,
+          h: 64,
+          label: ["Format", "prettier --check ."],
+          text: "Un seul style de code pour tout le dépôt, y compris la documentation (largeur 100). Ce fichier-ci en fait partie.",
+          where: ".prettierrc.json, .prettierignore",
+        },
+        {
+          id: "lint",
+          kind: "fast",
+          x: fastX(1),
+          y: 452,
+          w: W,
+          h: 64,
+          label: ["Lint", "eslint --max-warnings 0"],
+          text: "Règles strictes de typescript-eslint, plus des budgets : complexité 8, profondeur 3, 3 paramètres, 40 lignes par fonction, 250 par fichier. Interdit aussi `console`, les objets du navigateur et `Date.now()` dans le cœur, et les tests sans assertion.",
+          where: "eslint.config.ts",
+        },
+        {
+          id: "types",
+          kind: "fast",
+          x: fastX(2),
+          y: 452,
+          w: W,
+          h: 64,
+          label: ["Types", "tsc"],
+          text: "TypeScript en mode strict, avec en plus l'accès indexé vérifié, les propriétés optionnelles exactes et l'interdiction du code ou des paramètres inutilisés.",
+          where: "tsconfig.json",
+        },
+        {
+          id: "arch",
+          kind: "fast",
+          x: fastX(3),
+          y: 452,
+          w: W,
+          h: 64,
+          label: ["Architecture", "dependency-cruiser"],
+          text: "Fait respecter l'hexagone : `domain/` n'importe rien d'extérieur, `application/` seulement `domain/`, un adaptateur n'en importe jamais un autre, `main.ts` branche tout. Pas de cycle, et le code de production n'importe pas de tests.",
+          where: ".dependency-cruiser.cjs, docs/adr/0002",
+        },
+        {
+          id: "unit",
+          kind: "fast",
+          x: fastX(4),
+          y: 452,
+          w: W,
+          h: 64,
+          label: ["Tests + couverture", "Vitest, v8"],
+          text: "Tests unitaires (dont des tests de propriétés avec fast-check) où chaque test doit contenir une assertion. Couverture minimale de 90 %, et 100 % obligatoire sur `domain/` et `application/`.",
+          where: "vitest.config.ts",
+        },
+
+        // --- Réservé à la CI ------------------------------------------------
+        {
+          id: "knip",
+          kind: "ci",
+          x: fastX(0),
+          y: 570,
+          w: W,
+          h: 64,
+          label: ["Knip", "code mort"],
+          text: "Repère les fichiers, exports et dépendances qui ne servent plus à rien, pour que le dépôt ne s'encombre pas.",
+          where: "package.json",
+        },
+        {
+          id: "build",
+          kind: "ci",
+          x: fastX(1),
+          y: 570,
+          w: W,
+          h: 64,
+          label: ["Build", "vite build"],
+          text: "Produit la page statique dans `dist/` et y injecte la Content Security Policy (aucun script inline, aucune requête réseau sortante).",
+          where: "vite.config.ts, docs/adr/0004",
+        },
+        {
+          id: "size",
+          kind: "ci",
+          x: fastX(2),
+          y: 570,
+          w: W,
+          h: 64,
+          label: ["Taille", "size-limit · 60 kB"],
+          text: "Le JavaScript et le CSS du build, compressés, ne doivent pas dépasser 60 kB. Le seuil ne monte pas : on allège le code plutôt que le budget.",
+          where: ".size-limit.json",
+        },
+        {
+          id: "e2e",
+          kind: "ci",
+          x: fastX(3),
+          y: 570,
+          w: W,
+          h: 64,
+          label: ["Bout en bout", "Playwright · 5 projets"],
+          text: "Les scénarios tournent sur le build servi par `vite preview` : Chromium, Firefox, WebKit, plus un Pixel 7 et un iPhone 15. Ils vérifient aussi l'accessibilité (axe) et que la CSP bloque bien les scripts inline.",
+          where: "e2e/, playwright.config.ts",
+        },
+        {
+          id: "mutation",
+          kind: "ci",
+          x: fastX(4),
+          y: 570,
+          w: W,
+          h: 64,
+          label: ["Mutation", "Stryker"],
+          text: "Stryker modifie le code de `domain/` et `application/` et vérifie que les tests détectent chaque changement. Le build échoue sous 70 %, le seuil ne fait que monter.",
+          where: "stryker.config.json, docs/adr/0010",
+        },
+      ];
+
+      const NS = "http://www.w3.org/2000/svg";
+      const layer = document.getElementById("nodes");
+      const card = document.getElementById("card");
+      const byId = new Map(NODES.map((node) => [node.id, node]));
+
+      function svg(name, attrs, parent) {
+        const element = document.createElementNS(NS, name);
+        for (const [key, value] of Object.entries(attrs)) element.setAttribute(key, value);
+        parent?.append(element);
+        return element;
+      }
+
+      function addText(group, node, lineIndex, text, className) {
+        const twoLines = node.label[1] !== undefined;
+        const centerY = node.y + node.h / 2;
+        let x = node.x + node.w / 2;
+        let y = centerY + 4;
+        let anchor = "middle";
+        if (node.zone) {
+          anchor = "start";
+          x = node.x + 16;
+        } else if (twoLines) {
+          y = lineIndex === 0 ? centerY - 3 : centerY + 13;
+        }
+        const label = svg("text", { x, y, "text-anchor": anchor, class: className }, group);
+        label.textContent = text;
+      }
+
+      function renderNode(node) {
+        const group = svg(
+          "g",
+          {
+            class: `node k-${node.kind}${node.zone ? " zone-head" : ""}`,
+            role: "button",
+            tabindex: "0",
+            "aria-pressed": "false",
+            "aria-label": node.label.join(", "),
+            "data-id": node.id,
+          },
+          layer,
+        );
+        svg("rect", { x: node.x, y: node.y, width: node.w, height: node.h, rx: 8 }, group);
+        if (node.zone) {
+          addText(group, node, 0, node.label[0], "t-zone");
+          return;
+        }
+        addText(group, node, 0, node.label[0], "t-main");
+        if (node.label[1] !== undefined) addText(group, node, 1, node.label[1], "t-sub");
+      }
+
+      function inline(text) {
+        const fragment = document.createDocumentFragment();
+        text.split(/`([^`]+)`/).forEach((part, index) => {
+          if (index % 2 === 0) {
+            fragment.append(part);
+            return;
+          }
+          const code = document.createElement("code");
+          code.textContent = part;
+          fragment.append(code);
+        });
+        return fragment;
+      }
+
+      function select(id) {
+        const node = byId.get(id);
+        if (!node) return;
+        for (const group of layer.children) {
+          group.setAttribute("aria-pressed", String(group.dataset.id === id));
+        }
+        card.dataset.kind = node.kind;
+        document.getElementById("card-kind").textContent = KIND_LABEL[node.kind];
+        document.getElementById("card-title").textContent =
+          node.label.length > 1 && !node.zone
+            ? `${node.label[0]} · ${node.label[1]}`
+            : node.label.join(" · ");
+        const text = document.getElementById("card-text");
+        text.className = "";
+        text.replaceChildren(inline(node.text));
+        const where = document.getElementById("card-where");
+        where.hidden = node.where === undefined;
+        where.replaceChildren(node.where ? inline(`Où : \`${node.where}\``) : "");
+        history.replaceState(null, "", `#${id}`);
+      }
+
+      NODES.forEach(renderNode);
+
+      layer.addEventListener("click", (event) => {
+        const group = event.target.closest(".node");
+        if (group) select(group.dataset.id);
+      });
+      layer.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        const group = event.target.closest(".node");
+        if (!group) return;
+        event.preventDefault();
+        select(group.dataset.id);
+      });
+
+      const initial = location.hash.slice(1);
+      if (byId.has(initial)) select(initial);
+    </script>
+  </body>
+</html>
