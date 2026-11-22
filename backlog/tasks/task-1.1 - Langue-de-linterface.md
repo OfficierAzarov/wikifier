@@ -5,13 +5,13 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-22T12:28:27Z'
-updated_date: '2026-11-22T14:19:13Z'
+updated_date: '2026-11-22T14:28:26Z'
 labels:
   - ready-for-agent
 dependencies: []
 references:
-  - interface-language
-  - page-interface
+  - driving-interface-language
+  - driving-page-interface
 modified_files:
   - e2e/language.spec.ts
   - package.json
@@ -38,16 +38,18 @@ modified_files:
   - groma/flows/open-wiki3.md
   - groma/systems/wiki3/containers/wiki3-web-app/components/composition-root.md
   - >-
-    groma/systems/wiki3/containers/wiki3-web-app/components/interface-language.md
-  - groma/systems/wiki3/containers/wiki3-web-app/components/page-interface.md
-  - groma/systems/wiki3/containers/wiki3-web-app/components/page-use-cases.md
-  - groma/systems/wiki3/containers/wiki3-web-app/container.md
-  - groma/systems/wiki3/containers/wiki3-web-app/components/language.md
-  - groma/systems/wiki3/containers/wiki3-web-app/components/locale.md
-  - groma/systems/wiki3/containers/wiki3-web-app/components/ports.md
-  - groma/systems/wiki3/containers/wiki3-web-app/components/shell.md
+    groma/systems/wiki3/containers/wiki3-web-app/components/driving-interface-language.md
   - >-
-    groma/systems/wiki3/containers/wiki3-web-app/components/storage-language-preference.md
+    groma/systems/wiki3/containers/wiki3-web-app/components/driving-page-interface.md
+  - groma/systems/wiki3/containers/wiki3-web-app/components/use-cases-page.md
+  - groma/systems/wiki3/containers/wiki3-web-app/container.md
+  - >-
+    groma/systems/wiki3/containers/wiki3-web-app/components/use-cases-language.md
+  - groma/systems/wiki3/containers/wiki3-web-app/components/domain-locale.md
+  - groma/systems/wiki3/containers/wiki3-web-app/components/ports.md
+  - groma/systems/wiki3/containers/wiki3-web-app/components/driving-shell.md
+  - >-
+    groma/systems/wiki3/containers/wiki3-web-app/components/driven-storage-language-preference.md
 parent_task_id: TASK-1
 priority: high
 type: feature

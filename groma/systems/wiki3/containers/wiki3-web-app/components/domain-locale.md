@@ -1,9 +1,9 @@
 ---
 type: C4 Component
-title: Langues gérées
+title: 'Domaine : Langues gérées'
 status: stable
 groma:
-  id: locale
+  id: domain-locale
   parent: wiki3-web-app
   code:
     - scanner: typescript

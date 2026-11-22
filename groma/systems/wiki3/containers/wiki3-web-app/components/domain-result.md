@@ -1,9 +1,9 @@
 ---
 type: C4 Component
-title: Result
+title: 'Domaine : Result'
 status: stable
 groma:
-  id: result
+  id: domain-result
   parent: wiki3-web-app
   code:
     - scanner: typescript

@@ -1,15 +1,16 @@
 ---
 type: C4 Component
-title: Préférence de langue (stockage local)
+title: 'Adaptateur sortant : Préférence de langue (stockage local)'
 status: stable
 groma:
-  id: storage-language-preference
+  id: driven-storage-language-preference
   parent: wiki3-web-app
   code:
     - scanner: typescript
       file: src/adapters/driven/language-preference/storage-language-preference.ts
       symbol: createStorageLanguagePreference
   technology: TypeScript, localStorage
+  group: Driven adapters
 description: Mémorise la langue choisie dans le navigateur
 ---
 

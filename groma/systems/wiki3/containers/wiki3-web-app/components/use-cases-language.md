@@ -1,9 +1,9 @@
 ---
 type: C4 Component
-title: Choix de la langue
+title: 'Cas d''usage : Choix de la langue'
 status: stable
 groma:
-  id: language
+  id: use-cases-language
   parent: wiki3-web-app
   code:
     - scanner: typescript

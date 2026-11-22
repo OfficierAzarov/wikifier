@@ -4,15 +4,15 @@ title: Migrations de version et page enregistrée illisible
 status: To Do
 assignee: []
 created_date: '2026-11-22T12:29:12Z'
-updated_date: '2026-11-22T13:01:01Z'
+updated_date: '2026-11-22T14:28:16Z'
 labels:
   - ready-for-agent
 dependencies:
   - TASK-1.9
 references:
-  - backup-files
-  - page-storage
-  - page-use-cases
+  - driven-backup-files
+  - driven-page-storage
+  - use-cases-page
 parent_task_id: TASK-1
 priority: high
 type: feature

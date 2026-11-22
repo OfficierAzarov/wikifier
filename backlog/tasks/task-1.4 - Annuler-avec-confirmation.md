@@ -4,13 +4,13 @@ title: Annuler avec confirmation
 status: To Do
 assignee: []
 created_date: '2026-11-22T12:28:41Z'
-updated_date: '2026-11-22T13:01:00Z'
+updated_date: '2026-11-22T14:28:16Z'
 labels:
   - ready-for-agent
 dependencies:
   - TASK-1.3
 references:
-  - page-interface
+  - driving-page-interface
 parent_task_id: TASK-1
 priority: high
 type: feature

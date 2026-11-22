@@ -4,14 +4,14 @@ title: Table des matières
 status: To Do
 assignee: []
 created_date: '2026-11-22T12:28:57Z'
-updated_date: '2026-11-22T13:01:00Z'
+updated_date: '2026-11-22T14:28:17Z'
 labels:
   - ready-for-agent
 dependencies:
   - TASK-1.5
 references:
-  - page-interface
-  - markdown-renderer
+  - driving-page-interface
+  - driven-markdown-renderer
 parent_task_id: TASK-1
 priority: high
 type: feature

@@ -4,16 +4,16 @@ title: Modifier et enregistrer
 status: To Do
 assignee: []
 created_date: '2026-11-22T12:28:40Z'
-updated_date: '2026-11-22T13:01:00Z'
+updated_date: '2026-11-22T14:28:16Z'
 labels:
   - ready-for-agent
 dependencies:
   - TASK-1.2
 references:
-  - page
-  - page-use-cases
-  - page-interface
-  - system-clock
+  - domain-page
+  - use-cases-page
+  - driving-page-interface
+  - driven-system-clock
 parent_task_id: TASK-1
 priority: high
 type: feature
