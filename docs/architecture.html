@@ -1,0 +1,888 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>L'architecture hexagonale de Wiki3</title>
+    <style>
+      /* Palette Monokai Soda : fond #1a1a1a, texte #f6f6ef, accents cyan / vert / orange / violet. */
+      :root {
+        color-scheme: dark;
+        --bg: #1a1a1a;
+        --ink: #f6f6ef;
+        --muted: #a3a398;
+        --line: #8f908a;
+        --card: #232323;
+        --card-bd: #3e3d32;
+        --domain-bg: #1f3438;
+        --domain-bd: #66d9ef;
+        --app-bg: #2b3a26;
+        --app-bd: #a6e22e;
+        --driving-bg: #3c2d1b;
+        --driving-bd: #fd971f;
+        --driven-bg: #30293c;
+        --driven-bd: #ae81ff;
+        --root-bg: #2a2a28;
+        --root-bd: #8f908a;
+        --accent: #f92672;
+        --zone-app: rgba(166, 226, 46, 0.06);
+        --zone-domain: rgba(102, 217, 239, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font:
+          16px/1.5 system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+      }
+      main {
+        max-width: 1064px;
+        margin: 0 auto;
+        padding: 32px 16px 0;
+      }
+      h1 {
+        margin: 0 0 4px;
+        font-size: 1.8rem;
+        line-height: 1.2;
+      }
+      .lead {
+        margin: 0 0 20px;
+        color: var(--muted);
+        max-width: 72ch;
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px 24px;
+        margin: 0 0 16px;
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 18px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+      .legend li {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .swatch {
+        width: 14px;
+        height: 14px;
+        border-radius: 4px;
+        border: 2px solid;
+      }
+      .swatch.dashed {
+        border-style: dashed;
+        background: transparent;
+        border-color: var(--ink);
+      }
+      .filters {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+      .filters button {
+        font: inherit;
+        color: var(--ink);
+        background: var(--card);
+        border: 1px solid var(--card-bd);
+        border-radius: 999px;
+        padding: 3px 14px;
+        cursor: pointer;
+      }
+      .filters button[aria-pressed="true"] {
+        border-color: var(--accent);
+        color: var(--accent);
+        font-weight: 600;
+      }
+      .filters button:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      .diagram {
+        overflow-x: auto;
+        padding-bottom: 8px;
+      }
+      svg {
+        display: block;
+        width: 100%;
+        min-width: 900px;
+        height: auto;
+      }
+      svg text {
+        fill: var(--ink);
+        font-family: inherit;
+        pointer-events: none;
+      }
+      .t-main {
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .t-small {
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .t-sub {
+        font-size: 11px;
+        fill: var(--muted);
+      }
+      .t-zone {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+      }
+      .t-cap {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        fill: var(--muted);
+      }
+      .zone {
+        stroke-width: 1.5;
+        stroke-dasharray: 5 4;
+      }
+      .zone-app {
+        fill: var(--zone-app);
+        stroke: var(--app-bd);
+      }
+      .zone-domain {
+        fill: var(--zone-domain);
+        stroke: var(--domain-bd);
+      }
+      .link {
+        stroke: var(--line);
+        stroke-width: 1.5;
+        fill: none;
+      }
+      .link-dash {
+        stroke-dasharray: 4 4;
+      }
+      #arrow path {
+        fill: var(--line);
+      }
+
+      .node {
+        cursor: pointer;
+        outline: none;
+        transition: opacity 0.15s;
+      }
+      .node.dim {
+        opacity: 0.2;
+      }
+      .node rect {
+        stroke-width: 1.5;
+        transition: stroke-width 0.1s;
+      }
+      .node.planned rect {
+        stroke-dasharray: 6 4;
+      }
+      .node:hover rect {
+        stroke-width: 2.5;
+      }
+      .node:focus-visible rect {
+        stroke: var(--accent);
+        stroke-width: 3;
+        stroke-dasharray: 5 3;
+      }
+      .node[aria-pressed="true"] rect {
+        stroke: var(--accent);
+        stroke-width: 3.5;
+      }
+      .k-domain rect {
+        fill: var(--domain-bg);
+        stroke: var(--domain-bd);
+      }
+      .k-app rect {
+        fill: var(--app-bg);
+        stroke: var(--app-bd);
+      }
+      .k-driving rect {
+        fill: var(--driving-bg);
+        stroke: var(--driving-bd);
+      }
+      .k-driven rect {
+        fill: var(--driven-bg);
+        stroke: var(--driven-bd);
+      }
+      .k-root rect {
+        fill: var(--root-bg);
+        stroke: var(--root-bd);
+      }
+      .node.zone-head rect {
+        fill: transparent;
+        stroke: none;
+      }
+      .node.zone-head:hover rect,
+      .node.zone-head[aria-pressed="true"] rect {
+        fill: var(--card);
+        stroke: var(--line);
+        stroke-width: 1.5;
+      }
+
+      .card {
+        position: sticky;
+        bottom: 16px;
+        margin: 16px 0 32px;
+        padding: 14px 18px 16px;
+        background: var(--card);
+        border: 1px solid var(--card-bd);
+        border-left: 6px solid var(--root-bd);
+        border-radius: 10px;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+      }
+      .card[data-kind="domain"] {
+        border-left-color: var(--domain-bd);
+      }
+      .card[data-kind="app"] {
+        border-left-color: var(--app-bd);
+      }
+      .card[data-kind="driving"] {
+        border-left-color: var(--driving-bd);
+      }
+      .card[data-kind="driven"] {
+        border-left-color: var(--driven-bd);
+      }
+      .card-kind {
+        margin: 0;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .card h2 {
+        margin: 2px 0 6px;
+        font-size: 1.15rem;
+      }
+      .card p {
+        margin: 0;
+      }
+      .card .where {
+        margin-top: 8px;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+      code {
+        font:
+          0.9em ui-monospace,
+          "SF Mono",
+          Menlo,
+          monospace;
+        background: var(--root-bg);
+        padding: 1px 5px;
+        border-radius: 4px;
+      }
+      .hint {
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>L'architecture hexagonale de Wiki3</h1>
+      <p class="lead">
+        Ce qui existe dans <code>src/</code> et ce qui est prévu par les ADR et la carte Groma. Les
+        flèches vont dans le sens des dépendances : l'utilisatrice pilote l'application par les
+        adaptateurs de gauche, qui appellent les cas d'usage, qui s'appuient sur le domaine et sur
+        des ports implémentés par les adaptateurs de droite. Clique sur un élément pour savoir ce
+        qu'il fait.
+      </p>
+
+      <div class="toolbar">
+        <ul class="legend" aria-label="Légende">
+          <li>
+            <span
+              class="swatch"
+              style="background: var(--domain-bg); border-color: var(--domain-bd)"
+            ></span>
+            Domaine
+          </li>
+          <li>
+            <span
+              class="swatch"
+              style="background: var(--app-bg); border-color: var(--app-bd)"
+            ></span>
+            Application
+          </li>
+          <li>
+            <span
+              class="swatch"
+              style="background: var(--driving-bg); border-color: var(--driving-bd)"
+            ></span>
+            Adaptateur entrant
+          </li>
+          <li>
+            <span
+              class="swatch"
+              style="background: var(--driven-bg); border-color: var(--driven-bd)"
+            ></span>
+            Adaptateur sortant
+          </li>
+          <li>
+            <span
+              class="swatch"
+              style="background: var(--root-bg); border-color: var(--root-bd)"
+            ></span>
+            Racine de composition
+          </li>
+          <li><span class="swatch dashed"></span> Prévu (pointillés)</li>
+        </ul>
+        <div class="filters" role="group" aria-label="Filtrer par état">
+          <span>Afficher :</span>
+          <button type="button" data-filter="all" aria-pressed="true">Tout</button>
+          <button type="button" data-filter="built" aria-pressed="false">En place</button>
+          <button type="button" data-filter="planned" aria-pressed="false">Prévu</button>
+        </div>
+      </div>
+
+      <div class="diagram">
+        <svg
+          viewBox="0 100 1100 600"
+          role="group"
+          aria-label="Schéma de l'architecture hexagonale : adaptateurs entrants, application et domaine, adaptateurs sortants"
+        >
+          <defs>
+            <marker
+              id="arrow"
+              viewBox="0 0 10 10"
+              refX="9"
+              refY="5"
+              markerWidth="7"
+              markerHeight="7"
+              orient="auto-start-reverse"
+            >
+              <path d="M0 0 L10 5 L0 10 z" />
+            </marker>
+          </defs>
+
+          <!-- Hexagones : application (extérieur) et domaine (intérieur) -->
+          <polygon class="zone zone-app" points="400,110 700,110 880,340 700,570 400,570 220,340" />
+          <polygon
+            class="zone zone-domain"
+            points="490,250 610,250 640,340 610,430 490,430 460,340"
+          />
+          <text class="t-cap" x="0" y="150">ADAPTATEURS ENTRANTS</text>
+          <text class="t-cap" x="905" y="170">ADAPTATEURS SORTANTS</text>
+          <text class="t-sub" x="550" y="214" text-anchor="middle">utilise les ports</text>
+          <text class="t-sub" x="550" y="490" text-anchor="middle">utilise les ports (prévu)</text>
+
+          <!-- Dépendances entrantes -->
+          <path class="link" d="M185 281 H288" marker-end="url(#arrow)" />
+          <path class="link link-dash" d="M185 361 H288" marker-end="url(#arrow)" />
+          <path class="link link-dash" d="M92 227 V253" marker-end="url(#arrow)" />
+          <text class="t-sub" x="100" y="244">injecté par main.ts</text>
+
+          <!-- Application vers domaine -->
+          <path class="link" d="M450 281 H487" marker-end="url(#arrow)" />
+          <path class="link link-dash" d="M450 361 H487" marker-end="url(#arrow)" />
+
+          <!-- Application vers ports -->
+          <path class="link" d="M371 255 V222 H720 V230" marker-end="url(#arrow)" />
+          <path class="link link-dash" d="M371 387 V470 H720 V444" marker-end="url(#arrow)" />
+
+          <!-- Ports vers adaptateurs sortants -->
+          <path class="link" d="M790 247 C850 247 845 214 903 214" marker-end="url(#arrow)" />
+          <path class="link" d="M790 283 C850 283 845 266 903 266" marker-end="url(#arrow)" />
+          <path
+            class="link link-dash"
+            d="M790 319 C850 319 845 318 903 318"
+            marker-end="url(#arrow)"
+          />
+          <path
+            class="link link-dash"
+            d="M790 355 C850 355 845 370 903 370"
+            marker-end="url(#arrow)"
+          />
+          <path
+            class="link link-dash"
+            d="M790 391 C850 391 845 422 903 422"
+            marker-end="url(#arrow)"
+          />
+          <path
+            class="link link-dash"
+            d="M790 427 C850 427 845 474 903 474"
+            marker-end="url(#arrow)"
+          />
+
+          <!-- Branchement par la racine de composition -->
+          <path class="link link-dash" d="M60 620 V389" marker-end="url(#arrow)" />
+          <path class="link link-dash" d="M1002 620 V498" marker-end="url(#arrow)" />
+
+          <g id="nodes"></g>
+        </svg>
+      </div>
+
+      <section
+        class="card"
+        id="card"
+        data-kind="root"
+        aria-live="polite"
+        aria-label="Explication de l'élément sélectionné"
+      >
+        <p class="card-kind" id="card-kind">Mode d'emploi</p>
+        <h2 id="card-title">Choisis un élément du schéma</h2>
+        <p id="card-text" class="hint">
+          Chaque bloc coloré est cliquable (ou activable au clavier avec Tab puis Entrée). Les
+          boutons « En place » et « Prévu » ne laissent en pleine couleur que l'un des deux états.
+        </p>
+        <p class="where" id="card-where" hidden></p>
+      </section>
+      <noscript><p>Ce schéma a besoin de JavaScript pour s'afficher.</p></noscript>
+    </main>
+
+    <script>
+      const KIND_LABEL = {
+        domain: "Domaine",
+        app: "Application",
+        driving: "Adaptateur entrant",
+        driven: "Adaptateur sortant",
+        root: "Racine de composition",
+      };
+      const STATUS_LABEL = { built: "En place", planned: "Prévu" };
+
+      // Lignes des ports et des adaptateurs sortants : 6 rangées alignées.
+      const portY = (row) => 232 + row * 36;
+      const adapterY = (row) => 192 + row * 52;
+
+      const NODES = [
+        // --- Racine de composition ------------------------------------------
+        {
+          id: "composition-root",
+          kind: "root",
+          status: "built",
+          x: 0,
+          y: 620,
+          w: 1100,
+          h: 56,
+          label: ["Racine de composition", "src/main.ts · branche les adaptateurs sur les ports"],
+          text: "Seul endroit qui relie les adaptateurs aux ports (ADR 0002). Aujourd'hui il crée la préférence de langue sur localStorage, calcule la langue de départ, puis monte l'interface avec le traducteur et le choix de langue. Aucun autre module ne l'importe.",
+          where: "src/main.ts",
+        },
+
+        // --- Adaptateurs entrants (driving) ---------------------------------
+        {
+          id: "i18n",
+          kind: "driving",
+          status: "built",
+          x: 0,
+          y: 175,
+          w: 185,
+          h: 52,
+          label: ["Traduction fr · en", "adapters/driving/i18n"],
+          text: "Dictionnaires TypeScript fr (référence) et en de même type : une clé manquante ne compile pas. Les dates et les pluriels passent par Intl. Il n'importe aucun autre adaptateur : c'est main.ts qui le passe à l'interface (ADR 0005).",
+          where: "src/adapters/driving/i18n/",
+        },
+        {
+          id: "shell",
+          kind: "driving",
+          status: "built",
+          x: 0,
+          y: 255,
+          w: 185,
+          h: 52,
+          label: ["Interface · shell", "titre et sélecteur de langue"],
+          text: "Construit le titre et le sélecteur de langue en DOM natif, puis met les textes à jour sur place pour que le sélecteur garde le focus. Il appelle le cas d'usage de langue par la fonction `select` que lui passe main.ts. Le reste de l'interface n'existe pas encore (ADR 0003).",
+          where: "src/adapters/driving/ui/shell.ts",
+        },
+        {
+          id: "page-interface",
+          kind: "driving",
+          status: "planned",
+          x: 0,
+          y: 335,
+          w: 185,
+          h: 52,
+          label: ["Interface de la page", "Lire, Modifier, dialogues"],
+          text: "Dessinera les choix du premier lancement, les onglets Lire et Modifier, le formulaire, la boîte de confirmation accessible, la table des matières, les messages d'erreur et la version téléphone. Elle traduira les codes d'erreur du domaine, sans framework.",
+          where: "Groma : driving-page-interface · ADR 0003 · tickets de l'epic MVP",
+        },
+
+        // --- Application ----------------------------------------------------
+        {
+          id: "application-zone",
+          kind: "app",
+          status: "built",
+          zone: true,
+          center: true,
+          x: 400,
+          y: 116,
+          w: 300,
+          h: 26,
+          label: ["APPLICATION · CAS D'USAGE ET PORTS"],
+          text: "Les cas d'usage et les interfaces (ports) qu'ils attendent. Cette couche ne dépend que du domaine et jamais d'un adaptateur ; les objets du navigateur y sont interdits, tout passe par un port. dependency-cruiser et ESLint le vérifient dans check:fast.",
+          where: "src/application/, docs/adr/0002-architecture-hexagonale.md",
+        },
+        {
+          id: "language-use-cases",
+          kind: "app",
+          status: "built",
+          x: 292,
+          y: 255,
+          w: 158,
+          h: 52,
+          label: ["Langue de l'interface", "startLocale · selectLocale"],
+          small: true,
+          text: "Au démarrage, la langue enregistrée l'emporte ; sinon on résout celle du navigateur (anglais par défaut). Choisir une langue la mémorise. Ces fonctions ne connaissent que les ports.",
+          where: "src/application/language.ts",
+        },
+        {
+          id: "page-use-cases",
+          kind: "app",
+          status: "planned",
+          x: 292,
+          y: 335,
+          w: 158,
+          h: 52,
+          label: ["Cas d'usage de la page", "ouvrir, enregistrer…"],
+          small: true,
+          text: "Ouvrir l'application, créer, enregistrer, annuler, télécharger ou charger une sauvegarde, supprimer la page. Ils ne dépendront que du domaine et des ports, et seront testés avec de faux adaptateurs en mémoire.",
+          where: "Groma : use-cases-page · tickets de l'epic MVP",
+        },
+
+        // --- Domaine --------------------------------------------------------
+        {
+          id: "domain-zone",
+          kind: "domain",
+          status: "built",
+          zone: true,
+          center: true,
+          x: 500,
+          y: 396,
+          w: 100,
+          h: 26,
+          label: ["DOMAINE"],
+          text: "Les règles métier pures : il n'importe rien d'extérieur, pas même une bibliothèque, et n'utilise ni le navigateur ni l'heure courante. Il renvoie des codes d'erreur (par exemple title-required) que l'interface traduit.",
+          where: "src/domain/",
+        },
+        {
+          id: "locale",
+          kind: "domain",
+          status: "built",
+          x: 490,
+          y: 268,
+          w: 120,
+          h: 32,
+          label: ["Locale"],
+          small: true,
+          text: "Les langues prises en charge (fr, en), le test `isLocale`, et `resolveLocale` qui choisit la première langue du navigateur reconnue, sinon l'anglais.",
+          where: "src/domain/locale.ts",
+        },
+        {
+          id: "result",
+          kind: "domain",
+          status: "built",
+          x: 490,
+          y: 308,
+          w: 120,
+          h: 32,
+          label: ["Result"],
+          small: true,
+          text: "Union « succès ou échec » avec `success` et `failure`. Le domaine renvoie des résultats plutôt que de lever des exceptions ; toutes les couches peuvent l'utiliser.",
+          where: "src/domain/result.ts",
+        },
+        {
+          id: "page",
+          kind: "domain",
+          status: "built",
+          x: 490,
+          y: 348,
+          w: 120,
+          h: 32,
+          label: ["Page"],
+          small: true,
+          text: "Titre, corps Markdown et date de dernière modification. `createPage` refuse un titre vide (title-required) et reçoit l'heure en paramètre au lieu de la lire.",
+          where: "src/domain/page.ts",
+        },
+
+        // --- Ports (dans l'application) -------------------------------------
+        {
+          id: "port-language-preference",
+          kind: "app",
+          status: "built",
+          x: 650,
+          y: portY(0),
+          w: 140,
+          h: 30,
+          label: ["LanguagePreference"],
+          small: true,
+          text: "Interface `read` / `write` de la langue choisie par l'utilisatrice. Elle est implémentée par localStorage en production et par une version en mémoire dans les tests.",
+          where: "src/application/ports.ts",
+        },
+        {
+          id: "port-browser-languages",
+          kind: "app",
+          status: "built",
+          x: 650,
+          y: portY(1),
+          w: 140,
+          h: 30,
+          label: ["BrowserLanguages"],
+          small: true,
+          text: "Interface `list` des langues que demande le navigateur, la plus voulue d'abord.",
+          where: "src/application/ports.ts",
+        },
+        {
+          id: "port-page-storage",
+          kind: "app",
+          status: "planned",
+          x: 650,
+          y: portY(2),
+          w: 140,
+          h: 30,
+          label: ["PageStorage"],
+          small: true,
+          text: "Port de stockage de la page : lire, enregistrer, supprimer. Le nom est provisoire.",
+          where: "Groma : driven-page-storage",
+        },
+        {
+          id: "port-clock",
+          kind: "app",
+          status: "planned",
+          x: 650,
+          y: portY(3),
+          w: 140,
+          h: 30,
+          label: ["Clock"],
+          small: true,
+          text: "Port de l'heure courante : le domaine et l'application ne la lisent jamais directement (ESLint interdit `Date.now()`), ce qui permet de la fixer dans les tests.",
+          where: "Groma : driven-system-clock · CLAUDE.md",
+        },
+        {
+          id: "port-backup-files",
+          kind: "app",
+          status: "planned",
+          x: 650,
+          y: portY(4),
+          w: 140,
+          h: 30,
+          label: ["BackupFiles"],
+          small: true,
+          text: "Port pour télécharger la page en sauvegarde et lire une sauvegarde choisie par l'utilisatrice. Le nom est provisoire.",
+          where: "Groma : driven-backup-files · ADR 0006",
+        },
+        {
+          id: "port-markdown-renderer",
+          kind: "app",
+          status: "planned",
+          x: 650,
+          y: portY(5),
+          w: 140,
+          h: 30,
+          label: ["MarkdownRenderer"],
+          small: true,
+          text: "Port qui transforme le corps Markdown en HTML sûr. L'application n'importe jamais la bibliothèque de rendu.",
+          where: "Groma : driven-markdown-renderer · ADR 0004",
+        },
+
+        // --- Adaptateurs sortants (driven) ----------------------------------
+        {
+          id: "storage-language-preference",
+          kind: "driven",
+          status: "built",
+          x: 905,
+          y: adapterY(0),
+          w: 195,
+          h: 44,
+          label: ["Préférence de langue", "localStorage"],
+          text: "Lit et écrit la clé `wiki3.language`. Si le stockage est indisponible, le choix ne dure que le temps de la session, sans bloquer l'application. Une version en mémoire sert de faux adaptateur dans les tests.",
+          where: "src/adapters/driven/language-preference/",
+        },
+        {
+          id: "browser-languages",
+          kind: "driven",
+          status: "built",
+          x: 905,
+          y: adapterY(1),
+          w: 195,
+          h: 44,
+          label: ["Langues du navigateur", "navigator.languages"],
+          text: "Pas encore de fichier d'adaptateur : main.ts fournit directement `navigator.languages` comme implémentation de `list`.",
+          where: "src/main.ts",
+        },
+        {
+          id: "page-storage",
+          kind: "driven",
+          status: "planned",
+          x: 905,
+          y: adapterY(2),
+          w: 195,
+          h: 44,
+          label: ["Stockage de la page", "stockage du navigateur"],
+          text: "Gardera la page dans le navigateur. Il la lit par le même mécanisme de validation et de migration que les sauvegardes, et signalera un stockage plein, désactivé ou illisible sans casser l'application.",
+          where: "Groma : driven-page-storage · ADR 0006",
+        },
+        {
+          id: "system-clock",
+          kind: "driven",
+          status: "planned",
+          x: 905,
+          y: adapterY(3),
+          w: 195,
+          h: 44,
+          label: ["Horloge", "heure du système"],
+          text: "Donnera l'heure courante. Elle servira à dater les enregistrements et à nommer les fichiers de sauvegarde.",
+          where: "Groma : driven-system-clock",
+        },
+        {
+          id: "backup-files",
+          kind: "driven",
+          status: "planned",
+          x: 905,
+          y: adapterY(4),
+          w: 195,
+          h: 44,
+          label: ["Fichiers de sauvegarde", "JSON · Zod"],
+          text: "Téléchargera la page en fichier `titre-AAAA-MM-JJ.json` et lira un fichier choisi. Chaque version du format a son schéma Zod : le chargement valide, applique les migrations dans l'ordre et refuse un fichier invalide ou trop récent. Zod reste dans cet adaptateur.",
+          where: "Groma : driven-backup-files · ADR 0006",
+        },
+        {
+          id: "markdown-renderer",
+          kind: "driven",
+          status: "planned",
+          x: 905,
+          y: adapterY(5),
+          w: 195,
+          h: 44,
+          label: ["Rendu Markdown", "markdown-it"],
+          text: "Rendra le Markdown sans HTML brut ; seules les images en https seront acceptées. Une Content Security Policy en deuxième ligne de défense est déjà injectée dans le build.",
+          where: "Groma : driven-markdown-renderer · ADR 0004",
+        },
+      ];
+
+      const NS = "http://www.w3.org/2000/svg";
+      const layer = document.getElementById("nodes");
+      const card = document.getElementById("card");
+      const byId = new Map(NODES.map((node) => [node.id, node]));
+
+      function svg(name, attrs, parent) {
+        const element = document.createElementNS(NS, name);
+        for (const [key, value] of Object.entries(attrs)) element.setAttribute(key, value);
+        parent?.append(element);
+        return element;
+      }
+
+      function addText(group, node, lineIndex, text, className) {
+        const twoLines = node.label[1] !== undefined;
+        const centerY = node.y + node.h / 2;
+        let x = node.x + node.w / 2;
+        let y = centerY + 4;
+        let anchor = "middle";
+        if (node.zone && !node.center) {
+          anchor = "start";
+          x = node.x + 16;
+        } else if (twoLines) {
+          y = lineIndex === 0 ? centerY - 3 : centerY + 13;
+        }
+        const label = svg("text", { x, y, "text-anchor": anchor, class: className }, group);
+        label.textContent = text;
+      }
+
+      function renderNode(node) {
+        const classes = ["node", `k-${node.kind}`, node.status];
+        if (node.zone) classes.push("zone-head");
+        const group = svg(
+          "g",
+          {
+            class: classes.join(" "),
+            role: "button",
+            tabindex: "0",
+            "aria-pressed": "false",
+            "aria-label": `${node.label.join(", ")} (${STATUS_LABEL[node.status].toLowerCase()})`,
+            "data-id": node.id,
+            "data-status": node.status,
+          },
+          layer,
+        );
+        svg("rect", { x: node.x, y: node.y, width: node.w, height: node.h, rx: 8 }, group);
+        if (node.zone) {
+          addText(group, node, 0, node.label[0], "t-zone");
+          return;
+        }
+        addText(group, node, 0, node.label[0], node.small ? "t-small" : "t-main");
+        if (node.label[1] !== undefined) addText(group, node, 1, node.label[1], "t-sub");
+      }
+
+      function inline(text) {
+        const fragment = document.createDocumentFragment();
+        text.split(/`([^`]+)`/).forEach((part, index) => {
+          if (index % 2 === 0) {
+            fragment.append(part);
+            return;
+          }
+          const code = document.createElement("code");
+          code.textContent = part;
+          fragment.append(code);
+        });
+        return fragment;
+      }
+
+      function select(id) {
+        const node = byId.get(id);
+        if (!node) return;
+        for (const group of layer.children) {
+          group.setAttribute("aria-pressed", String(group.dataset.id === id));
+        }
+        card.dataset.kind = node.kind;
+        document.getElementById("card-kind").textContent =
+          `${KIND_LABEL[node.kind]} · ${STATUS_LABEL[node.status]}`;
+        document.getElementById("card-title").textContent = node.label.join(" · ");
+        const text = document.getElementById("card-text");
+        text.className = "";
+        text.replaceChildren(inline(node.text));
+        const where = document.getElementById("card-where");
+        where.hidden = node.where === undefined;
+        where.replaceChildren(node.where ? inline(`Où : \`${node.where}\``) : "");
+        history.replaceState(null, "", `#${id}`);
+      }
+
+      function filter(status) {
+        for (const group of layer.children) {
+          group.classList.toggle("dim", status !== "all" && group.dataset.status !== status);
+        }
+        for (const button of document.querySelectorAll("[data-filter]")) {
+          button.setAttribute("aria-pressed", String(button.dataset.filter === status));
+        }
+      }
+
+      NODES.forEach(renderNode);
+
+      layer.addEventListener("click", (event) => {
+        const group = event.target.closest(".node");
+        if (group) select(group.dataset.id);
+      });
+      layer.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        const group = event.target.closest(".node");
+        if (!group) return;
+        event.preventDefault();
+        select(group.dataset.id);
+      });
+      document.querySelector(".filters").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-filter]");
+        if (button) filter(button.dataset.filter);
+      });
+
+      const initial = location.hash.slice(1);
+      if (byId.has(initial)) select(initial);
+    </script>
+  </body>
+</html>
