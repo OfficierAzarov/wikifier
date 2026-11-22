@@ -56,7 +56,8 @@
     "/eslint.config.ts",
     "/playwright.config.ts",
     "/vite.config.ts",
-    "/vitest.config.ts"
+    "/vitest.config.ts",
+    "/src/adapters/driven/language-preference/in-memory-language-preference.ts"
   ],
   "workSources": [
     {

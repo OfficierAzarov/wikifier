@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-22T12:28:27Z'
-updated_date: '2026-11-22T14:01:32Z'
+updated_date: '2026-11-22T14:19:13Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -34,6 +34,20 @@ modified_files:
   - src/main.ts
   - src/styles.css
   - GLOSSARY.md
+  - groma/config.json
+  - groma/flows/open-wiki3.md
+  - groma/systems/wiki3/containers/wiki3-web-app/components/composition-root.md
+  - >-
+    groma/systems/wiki3/containers/wiki3-web-app/components/interface-language.md
+  - groma/systems/wiki3/containers/wiki3-web-app/components/page-interface.md
+  - groma/systems/wiki3/containers/wiki3-web-app/components/page-use-cases.md
+  - groma/systems/wiki3/containers/wiki3-web-app/container.md
+  - groma/systems/wiki3/containers/wiki3-web-app/components/language.md
+  - groma/systems/wiki3/containers/wiki3-web-app/components/locale.md
+  - groma/systems/wiki3/containers/wiki3-web-app/components/ports.md
+  - groma/systems/wiki3/containers/wiki3-web-app/components/shell.md
+  - >-
+    groma/systems/wiki3/containers/wiki3-web-app/components/storage-language-preference.md
 parent_task_id: TASK-1
 priority: high
 type: feature
