@@ -50,3 +50,8 @@ _Avoid_: Sauvegarder, publier, valider
 Un fichier JSON téléchargé qui contient la page enregistrée à un instant donné. L'utilisatrice peut en avoir plusieurs et en charger une, ce qui remplace sa page actuelle après confirmation.
 _Code_: `Backup` (télécharger : `downloadBackup`, charger : `loadBackup`)
 _Avoid_: Version, révision, export
+
+**Langue de l'interface**:
+La langue des textes de l'application (français ou anglais). Elle suit celle du navigateur, l'utilisatrice peut la changer à tout moment, et son choix reste dans son navigateur. Elle est indépendante de la langue de la page et n'est jamais écrite dans une sauvegarde.
+_Code_: `Locale`
+_Avoid_: Langue de la page, langue du compte, langue du contenu
