@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Le harnais du projet</title>
+    <style>
+      /* Palette Monokai Soda : fond #1a1a1a, texte #f6f6ef, accents cyan / vert / orange / violet. */
+      :root {
+        color-scheme: dark;
+        --bg: #1a1a1a;
+        --ink: #f6f6ef;
+        --muted: #a3a398;
+        --line: #8f908a;
+        --card: #232323;
+        --card-bd: #3e3d32;
+        --guide-bg: #1f3438;
+        --guide-bd: #66d9ef;
+        --step-bg: #2a2a28;
+        --step-bd: #8f908a;
+        --local-bg: #3c2d1b;
+        --local-bd: #fd971f;
+        --fast-bg: #2b3a26;
+        --fast-bd: #a6e22e;
+        --ci-bg: #30293c;
+        --ci-bd: #ae81ff;
+        --accent: #f92672;
+        --zone-fast: rgba(166, 226, 46, 0.06);
+        --zone-ci: rgba(174, 129, 255, 0.07);
+        --zone-guide: rgba(102, 217, 239, 0.06);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font:
+          16px/1.5 system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+      }
+      main {
+        max-width: 1064px;
+        margin: 0 auto;
+        padding: 32px 16px 0;
+      }
+      h1 {
+        margin: 0 0 4px;
+        font-size: 1.8rem;
+        line-height: 1.2;
+      }
+      .lead {
+        margin: 0 0 20px;
+        color: var(--muted);
+        max-width: 70ch;
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 18px;
+        margin: 0 0 16px;
+        padding: 0;
+        list-style: none;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+      .legend li {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .swatch {
+        width: 14px;
+        height: 14px;
+        border-radius: 4px;
+        border: 2px solid;
+      }
+
+      .diagram {
+        overflow-x: auto;
+        padding-bottom: 8px;
+      }
+      svg {
+        display: block;
+        width: 100%;
+        min-width: 860px;
+        height: auto;
+      }
+      svg text {
+        fill: var(--ink);
+        font-family: inherit;
+        pointer-events: none;
+      }
+      .t-main {
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .t-sub {
+        font-size: 11px;
+        fill: var(--muted);
+      }
+      .t-zone {
+        font-size: 13px;
+        font-weight: 700;
+      }
+      .t-cap {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        fill: var(--muted);
+      }
+      .zone {
+        stroke-width: 1.5;
+        stroke-dasharray: 5 4;
+      }
+      .zone-guide {
+        fill: var(--zone-guide);
+        stroke: var(--guide-bd);
+      }
+      .zone-fast {
+        fill: var(--zone-fast);
+        stroke: var(--fast-bd);
+      }
+      .zone-ci {
+        fill: var(--zone-ci);
+        stroke: var(--ci-bd);
+      }
+      .link {
+        stroke: var(--line);
+        stroke-width: 1.5;
+        fill: none;
+      }
+      .link-dash {
+        stroke-dasharray: 4 4;
+      }
+      #arrow path {
+        fill: var(--line);
+      }
+
+      .node {
+        cursor: pointer;
+        outline: none;
+      }
+      .node rect {
+        stroke-width: 1.5;
+        transition: stroke-width 0.1s;
+      }
+      .node:hover rect {
+        stroke-width: 2.5;
+      }
+      .node:focus-visible rect {
+        stroke: var(--accent);
+        stroke-width: 3;
+        stroke-dasharray: 5 3;
+      }
+      .node[aria-pressed="true"] rect {
+        stroke: var(--accent);
+        stroke-width: 3.5;
+      }
+      .k-guide rect {
+        fill: var(--guide-bg);
+        stroke: var(--guide-bd);
+      }
+      .k-step rect {
+        fill: var(--step-bg);
+        stroke: var(--step-bd);
+      }
+      .k-local rect {
+        fill: var(--local-bg);
+        stroke: var(--local-bd);
+      }
+      .k-fast rect {
+        fill: var(--fast-bg);
+        stroke: var(--fast-bd);
+      }
+      .k-ci rect {
+        fill: var(--ci-bg);
+        stroke: var(--ci-bd);
+      }
+      .node.zone-head rect {
+        fill: transparent;
+        stroke: none;
+      }
+      .node.zone-head:hover rect,
+      .node.zone-head[aria-pressed="true"] rect {
+        fill: var(--card);
+        stroke: var(--line);
+        stroke-width: 1.5;
+      }
+
+      .card {
+        position: sticky;
+        bottom: 16px;
+        margin: 16px 0 32px;
+        padding: 14px 18px 16px;
+        background: var(--card);
+        border: 1px solid var(--card-bd);
+        border-left: 6px solid var(--step-bd);
+        border-radius: 10px;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+      }
+      .card[data-kind="guide"] {
+        border-left-color: var(--guide-bd);
+      }
+      .card[data-kind="local"] {
+        border-left-color: var(--local-bd);
+      }
+      .card[data-kind="fast"] {
+        border-left-color: var(--fast-bd);
+      }
+      .card[data-kind="ci"] {
+        border-left-color: var(--ci-bd);
+      }
+      .card-kind {
+        margin: 0;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .card h2 {
+        margin: 2px 0 6px;
+        font-size: 1.15rem;
+      }
+      .card p {
+        margin: 0;
+      }
+      .card .where {
+        margin-top: 8px;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+      code {
+        font:
+          0.9em ui-monospace,
+          "SF Mono",
+          Menlo,
+          monospace;
+        background: var(--step-bg);
+        padding: 1px 5px;
+        border-radius: 4px;
+      }
+      .hint {
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Le harnais du projet</h1>
+      <p class="lead">
+        Tout ce qui guide le code avant qu'il soit écrit, puis le contrôle à chaque étape jusqu'à la
+        CI. Plus on avance vers la droite et vers le bas, plus le contrôle est complet (et lent).
+        Clique sur un élément pour savoir ce qu'il fait.
+      </p>
+
+      <ul class="legend" aria-label="Légende">
+        <li>
+          <span
+            class="swatch"
+            style="background: var(--guide-bg); border-color: var(--guide-bd)"
+          ></span>
+          Guide ou règle
+        </li>
+        <li>
+          <span
+            class="swatch"
+            style="background: var(--step-bg); border-color: var(--step-bd)"
+          ></span>
+          Moment du cycle
+        </li>
+        <li>
+          <span
+            class="swatch"
+            style="background: var(--local-bg); border-color: var(--local-bd)"
+          ></span>
+          Garde-fou local
+        </li>
+        <li>
+          <span
+            class="swatch"
+            style="background: var(--fast-bg); border-color: var(--fast-bd)"
+          ></span>
+          Contrôle de <code>check:fast</code>
+        </li>
+        <li>
+          <span class="swatch" style="background: var(--ci-bg); border-color: var(--ci-bd)"></span>
+          Contrôle réservé à la CI
+        </li>
+      </ul>
+
+      <div class="diagram">
+        <svg
+          viewBox="0 0 1000 660"
+          role="group"
+          aria-label="Schéma du harnais : guides, moments du cycle et contrôles"
+        >
+          <defs>
+            <marker
+              id="arrow"
+              viewBox="0 0 10 10"
+              refX="9"
+              refY="5"
+              markerWidth="7"
+              markerHeight="7"
+              orient="auto-start-reverse"
+            >
+              <path d="M0 0 L10 5 L0 10 z" />
+            </marker>
+          </defs>
+
+          <!-- Zones -->
+          <rect class="zone zone-guide" x="0" y="0" width="1000" height="96" rx="12" />
+          <rect class="zone zone-ci" x="0" y="366" width="1000" height="288" rx="12" />
+          <rect class="zone zone-fast" x="12" y="410" width="976" height="122" rx="10" />
+          <text class="t-cap" x="16" y="18">AVANT D'ÉCRIRE · CE QUE L'AGENT LIT</text>
+          <text class="t-cap" x="24" y="556">EN PLUS, UNIQUEMENT EN CI</text>
+
+          <!-- Liens -->
+          <path class="link" d="M88 96 V128" marker-end="url(#arrow)" />
+          <path class="link" d="M176 158 H204" marker-end="url(#arrow)" />
+          <path class="link" d="M382 158 H410" marker-end="url(#arrow)" />
+          <path class="link" d="M588 158 H616" marker-end="url(#arrow)" />
+          <path class="link" d="M794 158 H822" marker-end="url(#arrow)" />
+          <path class="link" d="M88 186 V212 M88 260 V276" />
+          <path class="link" d="M294 186 V212 M294 260 V276" />
+          <path class="link" d="M500 186 V212 M500 260 V276" />
+          <path class="link" d="M706 186 V212" />
+          <path class="link" d="M912 186 V212 M912 260 V276" />
+          <path class="link link-dash" d="M294 324 V408" marker-end="url(#arrow)" />
+          <path class="link link-dash" d="M706 260 V408" marker-end="url(#arrow)" />
+          <path class="link link-dash" d="M912 324 V364" marker-end="url(#arrow)" />
+
+          <g id="nodes"></g>
+        </svg>
+      </div>
+
+      <section
+        class="card"
+        id="card"
+        data-kind="step"
+        aria-live="polite"
+        aria-label="Explication de l'élément sélectionné"
+      >
+        <p class="card-kind" id="card-kind">Mode d'emploi</p>
+        <h2 id="card-title">Choisis un élément du schéma</h2>
+        <p id="card-text" class="hint">
+          Chaque bloc coloré est cliquable (ou activable au clavier avec Tab puis Entrée).
+        </p>
+        <p class="where" id="card-where" hidden></p>
+      </section>
+      <noscript><p>Ce schéma a besoin de JavaScript pour s'afficher.</p></noscript>
+    </main>
+
+    <script>
+      const KIND_LABEL = {
+        guide: "Guide ou règle",
+        step: "Moment du cycle",
+        local: "Garde-fou local",
+        fast: "Contrôle de check:fast",
+        ci: "Contrôle réservé à la CI",
+      };
+
+      // Colonnes du cycle : x = 0, 206, 412, 618, 824 (largeur 176).
+      const COLUMN_X = [0, 206, 412, 618, 824];
+      const W = 176;
+      const col = (i) => COLUMN_X[i];
+      const guideX = (i) => i * 168.8;
+      const fastX = (i) => 24 + i * 194;
+
+      // GABARIT : garde la disposition, remplace chaque libellé et chaque texte par le contenu réel
+      // du projet, supprime ou déplace les nœuds qui n'existent pas (et les liens du SVG qui vont avec).
+      const NODES = [
+        // --- Guides (bande du haut) ---
+        { id: "guide-rules", kind: "guide", x: guideX(0), y: 30, w: 156, h: 52,
+          label: ["Instructions agent", "CLAUDE.md / AGENTS.md"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        { id: "guide-glossary", kind: "guide", x: guideX(1), y: 30, w: 156, h: 52,
+          label: ["Glossaire", "vocabulaire"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        { id: "guide-decisions", kind: "guide", x: guideX(2), y: 30, w: 156, h: 52,
+          label: ["ADR", "décisions"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        { id: "guide-skills", kind: "guide", x: guideX(3), y: 30, w: 156, h: 52,
+          label: ["Skills", "procédures"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        { id: "guide-backlog", kind: "guide", x: guideX(4), y: 30, w: 156, h: 52,
+          label: ["Backlog", "tickets"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        { id: "guide-map", kind: "guide", x: guideX(5), y: 30, w: 156, h: 52,
+          label: ["Architecture", "carte du système"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        // --- Moments du cycle ---
+        { id: "writing", kind: "step", x: col(0), y: 130, w: W, h: 56,
+          label: ["1 · Écriture", "guidée par les documents"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        { id: "turn-end", kind: "step", x: col(1), y: 130, w: W, h: 56,
+          label: ["2 · Fin de tour", "l'agent veut s'arrêter"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        { id: "commit", kind: "step", x: col(2), y: 130, w: W, h: 56,
+          label: ["3 · git commit", "hook pre-commit"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        { id: "push", kind: "step", x: col(3), y: 130, w: W, h: 56,
+          label: ["4 · git push", "hook pre-push"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        { id: "ci", kind: "step", x: col(4), y: 130, w: W, h: 56,
+          label: ["5 · Intégration", "CI"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        // --- Garde-fous sous chaque moment (kind: guide = règle, local = hook, ci = réservé à la CI) ---
+        { id: "rule-1", kind: "guide", x: col(0), y: 212, w: W, h: 48,
+          label: ["Règle 1", "pratique de travail"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        { id: "rule-2", kind: "guide", x: col(0), y: 276, w: W, h: 48,
+          label: ["Règle 2", "pratique de travail"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        { id: "agent-hook", kind: "local", x: col(1), y: 212, w: W, h: 48,
+          label: ["Hook de l'agent", "script"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        { id: "agent-hook-guard", kind: "local", x: col(1), y: 276, w: W, h: 48,
+          label: ["Garde-fou", "anti-boucle"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        { id: "commit-job-1", kind: "local", x: col(2), y: 212, w: W, h: 48,
+          label: ["Tâche 1", "fichiers indexés"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        { id: "commit-job-2", kind: "local", x: col(2), y: 276, w: W, h: 48,
+          label: ["Tâche 2", "fichiers indexés"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        { id: "push-job", kind: "local", x: col(3), y: 212, w: W, h: 48,
+          label: ["pre-push", "lance la suite rapide"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        { id: "ci-extra-1", kind: "ci", x: col(4), y: 212, w: W, h: 48,
+          label: ["Cache", "accélère la CI"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        { id: "ci-extra-2", kind: "ci", x: col(4), y: 276, w: W, h: 48,
+          label: ["Rapports", "en cas d'échec"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        // --- En-têtes de zone (cliquables) : commande complète, puis commande rapide ---
+        { id: "check-full", kind: "ci", zone: true, x: 0, y: 366, w: 1000, h: 36,
+          label: ["Commande complète", "CI"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        { id: "check-fast", kind: "fast", zone: true, x: 12, y: 410, w: 976, h: 34,
+          label: ["Commande rapide", "étapes 2 et 4"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        // --- Contenu de la commande rapide (5 cases) ---
+        { id: "fast-1", kind: "fast", x: fastX(0), y: 452, w: W, h: 64,
+          label: ["Contrôle 1", "commande"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        { id: "fast-2", kind: "fast", x: fastX(1), y: 452, w: W, h: 64,
+          label: ["Contrôle 2", "commande"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        { id: "fast-3", kind: "fast", x: fastX(2), y: 452, w: W, h: 64,
+          label: ["Contrôle 3", "commande"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        { id: "fast-4", kind: "fast", x: fastX(3), y: 452, w: W, h: 64,
+          label: ["Contrôle 4", "commande"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        { id: "fast-5", kind: "fast", x: fastX(4), y: 452, w: W, h: 64,
+          label: ["Contrôle 5", "commande"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        // --- Réservé à la CI (5 cases) ---
+        { id: "ci-only-1", kind: "ci", x: fastX(0), y: 570, w: W, h: 64,
+          label: ["Contrôle CI 1", "commande"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        { id: "ci-only-2", kind: "ci", x: fastX(1), y: 570, w: W, h: 64,
+          label: ["Contrôle CI 2", "commande"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        { id: "ci-only-3", kind: "ci", x: fastX(2), y: 570, w: W, h: 64,
+          label: ["Contrôle CI 3", "commande"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        { id: "ci-only-4", kind: "ci", x: fastX(3), y: 570, w: W, h: 64,
+          label: ["Contrôle CI 4", "commande"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+        { id: "ci-only-5", kind: "ci", x: fastX(4), y: 570, w: W, h: 64,
+          label: ["Contrôle CI 5", "commande"],
+          text: "À rédiger : 2 ou 3 phrases sur ce que fait cet élément, d'après la configuration réelle.",
+          where: "chemin/du/fichier" },
+      ];
+
+      const NS = "http://www.w3.org/2000/svg";
+      const layer = document.getElementById("nodes");
+      const card = document.getElementById("card");
+      const byId = new Map(NODES.map((node) => [node.id, node]));
+
+      function svg(name, attrs, parent) {
+        const element = document.createElementNS(NS, name);
+        for (const [key, value] of Object.entries(attrs)) element.setAttribute(key, value);
+        parent?.append(element);
+        return element;
+      }
+
+      function addText(group, node, lineIndex, text, className) {
+        const twoLines = node.label[1] !== undefined;
+        const centerY = node.y + node.h / 2;
+        let x = node.x + node.w / 2;
+        let y = centerY + 4;
+        let anchor = "middle";
+        if (node.zone) {
+          anchor = "start";
+          x = node.x + 16;
+        } else if (twoLines) {
+          y = lineIndex === 0 ? centerY - 3 : centerY + 13;
+        }
+        const label = svg("text", { x, y, "text-anchor": anchor, class: className }, group);
+        label.textContent = text;
+      }
+
+      function renderNode(node) {
+        const group = svg(
+          "g",
+          {
+            class: `node k-${node.kind}${node.zone ? " zone-head" : ""}`,
+            role: "button",
+            tabindex: "0",
+            "aria-pressed": "false",
+            "aria-label": node.label.join(", "),
+            "data-id": node.id,
+          },
+          layer,
+        );
+        svg("rect", { x: node.x, y: node.y, width: node.w, height: node.h, rx: 8 }, group);
+        if (node.zone) {
+          addText(group, node, 0, node.label[0], "t-zone");
+          return;
+        }
+        addText(group, node, 0, node.label[0], "t-main");
+        if (node.label[1] !== undefined) addText(group, node, 1, node.label[1], "t-sub");
+      }
+
+      function inline(text) {
+        const fragment = document.createDocumentFragment();
+        text.split(/`([^`]+)`/).forEach((part, index) => {
+          if (index % 2 === 0) {
+            fragment.append(part);
+            return;
+          }
+          const code = document.createElement("code");
+          code.textContent = part;
+          fragment.append(code);
+        });
+        return fragment;
+      }
+
+      function select(id) {
+        const node = byId.get(id);
+        if (!node) return;
+        for (const group of layer.children) {
+          group.setAttribute("aria-pressed", String(group.dataset.id === id));
+        }
+        card.dataset.kind = node.kind;
+        document.getElementById("card-kind").textContent = KIND_LABEL[node.kind];
+        document.getElementById("card-title").textContent =
+          node.label.length > 1 && !node.zone
+            ? `${node.label[0]} · ${node.label[1]}`
+            : node.label.join(" · ");
+        const text = document.getElementById("card-text");
+        text.className = "";
+        text.replaceChildren(inline(node.text));
+        const where = document.getElementById("card-where");
+        where.hidden = node.where === undefined;
+        where.replaceChildren(node.where ? inline(`Où : \`${node.where}\``) : "");
+        history.replaceState(null, "", `#${id}`);
+      }
+
+      NODES.forEach(renderNode);
+
+      layer.addEventListener("click", (event) => {
+        const group = event.target.closest(".node");
+        if (group) select(group.dataset.id);
+      });
+      layer.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        const group = event.target.closest(".node");
+        if (!group) return;
+        event.preventDefault();
+        select(group.dataset.id);
+      });
+
+      const initial = location.hash.slice(1);
+      if (byId.has(initial)) select(initial);
+    </script>
+  </body>
+</html>
