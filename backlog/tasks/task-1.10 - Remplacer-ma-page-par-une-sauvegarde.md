@@ -4,11 +4,17 @@ title: Remplacer ma page par une sauvegarde
 status: To Do
 assignee: []
 created_date: '2026-11-22T12:29:12Z'
+updated_date: '2026-11-22T13:01:01Z'
 labels:
   - ready-for-agent
 dependencies:
   - TASK-1.9
   - TASK-1.4
+references:
+  - backup-files
+  - page-use-cases
+  - page-storage
+  - page-interface
 parent_task_id: TASK-1
 priority: high
 type: feature

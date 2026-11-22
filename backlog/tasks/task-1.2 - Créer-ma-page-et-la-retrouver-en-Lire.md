@@ -4,10 +4,18 @@ title: Créer ma page et la retrouver en Lire
 status: To Do
 assignee: []
 created_date: '2026-11-22T12:28:40Z'
+updated_date: '2026-11-22T13:01:00Z'
 labels:
   - ready-for-agent
 dependencies:
   - TASK-1.1
+references:
+  - page
+  - composition-root
+  - page-use-cases
+  - page-storage
+  - system-clock
+  - page-interface
 parent_task_id: TASK-1
 priority: high
 type: feature

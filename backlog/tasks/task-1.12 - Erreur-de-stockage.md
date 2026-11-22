@@ -4,11 +4,17 @@ title: Erreur de stockage
 status: To Do
 assignee: []
 created_date: '2026-11-22T12:29:13Z'
+updated_date: '2026-11-22T13:01:01Z'
 labels:
   - ready-for-agent
 dependencies:
   - TASK-1.3
   - TASK-1.8
+references:
+  - page-storage
+  - page-use-cases
+  - page-interface
+  - backup-files
 parent_task_id: TASK-1
 priority: high
 type: feature

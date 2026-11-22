@@ -4,10 +4,12 @@ title: 'Epic : Wiki3 MVP, une page par utilisatrice enregistrée dans son naviga
 status: To Do
 assignee: []
 created_date: '2026-11-21T20:26:10Z'
-updated_date: '2026-11-22T12:38:02Z'
+updated_date: '2026-11-22T13:01:00Z'
 labels:
   - ready-for-agent
 dependencies: []
+references:
+  - wiki3-web-app
 priority: high
 type: feature
 ordinal: 1000
